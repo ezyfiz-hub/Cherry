@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fruit Spin - Virtual Casino & Jack's Lounge</title>
+    <!-- Tailwind CSS for UI Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & Orbitron -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at center, #240a3e 0%, #0a0216 100%);
+            color: #ffffff;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow-x: hidden;
+        }
+
+        .digital-font {
+            font-family: 'Orbitron', monospace;
+        }
+
+        /* Gold and Neon Glow Effects */
+        .gold-gradient-text {
+            background: linear-gradient(135deg, #fff3a1 0%, #f59e0b 50%, #d97706 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .jackpot-glow {
+            text-shadow: 0 0 10px #f59e0b, 0 0 20px #ef4444;
+        }
+
+        .slot-frame {
+            background: linear-gradient(180deg, #341259 0%, #150628 100%);
+            box-shadow: 0 0 40px rgba(168, 85, 247, 0.4), inset 0 0 20px rgba(0, 0, 0, 0.9);
+            border: 4px solid #9333ea;
+        }
+
+        /* Smooth Reel Physics & Styling */
+        .reel-column {
+            background: rgba(12, 4, 24, 0.95);
+            border: 1px solid rgba(192, 132, 252, 0.3);
+            border-radius: 14px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 0 25px rgba(0,0,0,0.95);
+        }
+
+        .reel-strip {
+            display: flex;
+            flex-direction: column;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            will-change: transform;
+        }
+
+        .reel-blur {
+            filter: blur(4px);
+        }
+
+        /* Symbol Card Styling */
+        .symbol-card {
+            height: 90px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.7rem;
+            position: relative;
+            user-select: none;
+        }
+
+        @media (min-width: 640px) {
+            .symbol-card {
+                height: 110px;
+                font-size: 3.5rem;
+            }
+        }
+
+        .winning-symbol {
+            animation: symbolPulse 0.7s infinite alternate ease-in-out;
+            border: 2px solid #ef4444;
+            border-radius: 14px;
+            background: rgba(239, 68, 68, 0.25);
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.9), inset 0 0 12px rgba(255, 255, 255, 0.6);
+            z-index: 10;
+        }
+
+        @keyframes symbolPulse {
+            0% { transform: scale(0.92); box-shadow: 0 0 10px #ef4444; }
+            100% { transform: scale(1.08); box-shadow: 0 0 30px #f59e0b; }
+        }
+
+        /* Screen Shake Effect for Jack's Hype Mode */
+        .shake-screen {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+
+        /* Payline Canvas & Overlay */
+        #payline-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 99;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 6, 28, 0.8); }
+        ::-webkit-scrollbar-thumb { background: #7e22ce; border-radius: 4px; }
+
+        .reduce-motion * {
+            animation: none !important;
+            transition: none !important;
+            filter: none !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between items-center p-2 sm:p-4">
+
+    <!-- Confetti & Celebration Layer -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- App Container -->
+    <div id="main-app" class="w-full max-w-4xl flex flex-col gap-3">
+
+        <!-- Header Bar -->
+        <header class="flex flex-col sm:flex-row justify-between items-center bg-purple-950/80 backdrop-blur-md p-3 rounded-2xl border border-purple-700/50 shadow-xl gap-3">
+            <!-- Brand & Mascot Info -->
+            <div class="flex items-center gap-2">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-red-600 via-amber-500 to-yellow-300 flex items-center justify-center text-2xl shadow-lg shadow-amber-500/40">
+                    🎰
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-xl sm:text-2xl font-black tracking-wider gold-gradient-text uppercase">FRUIT SPIN</h1>
+                        <span class="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full text-[10px] font-bold">JACK'S LOUNGE</span>
+                        <div id="tiktok-status-badge" onclick="openModal('tiktok-modal')" class="cursor-pointer px-2 py-0.5 bg-gray-800 text-gray-400 border border-gray-600 rounded-full text-[10px] font-bold flex items-center gap-1 hover:bg-gray-700 transition">
+                            <i class="fa-brands fa-tiktok"></i>
+                            <span id="tiktok-badge-text">TikTok: Offline</span>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-purple-300 font-semibold uppercase tracking-widest">Simulasi Hiburan Maya Sahaja</p>
+                </div>
+            </div>
+
+            <!-- Virtual Progressive Jackpots -->
+            <div class="flex items-center gap-2 sm:gap-4 bg-black/60 px-3.5 py-1.5 rounded-xl border border-purple-800/60 text-xs sm:text-sm">
+                <div class="text-center">
+                    <span class="block text-[9px] text-cyan-400 font-bold tracking-wider">MINI</span>
+                    <span id="jackpot-mini" class="digital-font text-cyan-300 font-bold">5,840</span>
+                </div>
+                <div class="h-6 w-[1px] bg-purple-800"></div>
+                <div class="text-center">
+                    <span class="block text-[9px] text-amber-400 font-bold tracking-wider">MAJOR</span>
+                    <span id="jackpot-major" class="digital-font text-amber-300 font-bold">28,950</span>
+                </div>
+                <div class="h-6 w-[1px] bg-purple-800"></div>
+                <div class="text-center">
+                    <span class="block text-[9px] text-red-500 font-bold tracking-wider">MEGA</span>
+                    <span id="jackpot-mega" class="digital-font text-red-400 font-bold jackpot-glow">124,500</span>
+                </div>
+            </div>
+
+            <!-- Header Quick Action Buttons -->
+            <div class="flex items-center gap-2">
+                <button onclick="openModal('tiktok-modal')" class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-md">
+                    <i class="fa-brands fa-tiktok text-amber-300"></i>
+                    <span class="hidden sm:inline">TikTok Live</span>
+                </button>
+
+                <!-- Brother Louie Music Toggle Button -->
+                <button id="btn-music" onclick="toggleBrotherLouieMusic()" class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-700 to-purple-800 hover:from-indigo-600 hover:to-purple-700 border border-indigo-400/40 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-md">
+                    <i id="music-icon" class="fa-solid fa-music text-amber-300"></i>
+                    <span class="hidden sm:inline">Brother Louie</span>
+                </button>
+
+                <!-- Daily Bonus -->
+                <button onclick="openModal('daily-modal')" class="relative px-2.5 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-black font-bold text-xs rounded-xl transition shadow-lg flex items-center gap-1">
+                    <i class="fa-solid fa-gift text-sm"></i>
+                    <span>Bonus</span>
+                    <span id="daily-indicator" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
+                </button>
+
+                <!-- Sound Switch & Settings -->
+                <button id="btn-sound-toggle" onclick="toggleSound()" class="w-9 h-9 rounded-xl bg-purple-900/70 hover:bg-purple-800 border border-purple-700/50 flex items-center justify-center text-purple-200 transition" aria-label="Kesan Audio">
+                    <i id="sound-icon" class="fa-solid fa-volume-high text-sm"></i>
+                </button>
+                <button onclick="openModal('settings-modal')" class="w-9 h-9 rounded-xl bg-purple-900/70 hover:bg-purple-800 border border-purple-700/50 flex items-center justify-center text-purple-200 transition" aria-label="Tetapan">
+                    <i class="fa-solid fa-gear text-sm"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Credit Dashboard Bar & Withdrawal Gateway -->
+        <section class="grid grid-cols-4 gap-2 text-center">
+            <div class="bg-gradient-to-b from-purple-950/90 to-slate-950 p-2 sm:p-3 rounded-2xl border border-purple-800/40 shadow-md">
+                <span class="text-[9px] sm:text-xs text-purple-300 uppercase tracking-wider font-semibold block">Baki Kredit</span>
+                <span id="display-credits" class="digital-font text-base sm:text-2xl font-bold text-amber-400">10,000</span>
+            </div>
+
+            <!-- Custom Typable Bet Amount Input -->
+            <div class="bg-gradient-to-b from-purple-950/90 to-slate-950 p-1.5 sm:p-2.5 rounded-2xl border border-cyan-500/40 shadow-md flex flex-col justify-center items-center">
+                <span class="text-[9px] sm:text-xs text-cyan-300 uppercase tracking-wider font-semibold block">Taruhan (Taip)</span>
+                <div class="flex items-center justify-center gap-1 w-full mt-0.5">
+                    <span class="text-xs text-cyan-400 font-bold">$</span>
+                    <input type="number" id="input-bet" onchange="handleBetInputChange(this.value)" min="10" max="10000" step="10" value="10" 
+                           class="w-16 sm:w-24 bg-black/70 text-cyan-300 digital-font text-center font-bold text-sm sm:text-xl rounded-lg border border-cyan-600/60 focus:outline-none focus:border-amber-400 p-0.5">
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-b from-purple-950/90 to-slate-950 p-2 sm:p-3 rounded-2xl border border-purple-800/40 shadow-md">
+                <span class="text-[9px] sm:text-xs text-purple-300 uppercase tracking-wider font-semibold block">Menang Terakhir</span>
+                <span id="display-win" class="digital-font text-base sm:text-2xl font-bold text-emerald-400">0</span>
+            </div>
+
+            <!-- Mock Withdrawal / Cuci Button -->
+            <button onclick="openModal('withdraw-modal')" class="bg-gradient-to-b from-emerald-600 to-teal-800 hover:from-emerald-500 hover:to-teal-700 active:scale-95 p-2 sm:p-3 rounded-2xl border border-emerald-400/50 shadow-lg flex flex-col justify-center items-center transition">
+                <span class="text-[9px] sm:text-xs text-emerald-200 uppercase tracking-wider font-bold block">💵 CUCI / WITHDRAW</span>
+                <span class="digital-font text-xs sm:text-sm font-black text-white flex items-center gap-1">
+                    <i class="fa-solid fa-money-bill-transfer"></i> MAYA
+                </span>
+            </button>
+        </section>
+
+        <!-- Jack's Lounge Hype Banner & Jack Drop Button -->
+        <div class="bg-gradient-to-r from-red-900/60 via-purple-900/80 to-amber-900/60 p-2 rounded-2xl border border-amber-500/40 flex items-center justify-between px-3 shadow-md">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl animate-bounce">🤵</span>
+                <div>
+                    <h2 class="text-xs sm:text-sm font-black text-amber-300">ABANG JACK BELANJA!</h2>
+                    <p class="text-[10px] text-purple-200">Tekan butang Jack untuk hujan kredit & kejutan jackpot!</p>
+                </div>
+            </div>
+            <button onclick="triggerJackBelanja()" class="px-3 py-1.5 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 active:scale-95 text-black font-black text-xs rounded-xl shadow-lg flex items-center gap-1 transition uppercase tracking-wider">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>BELANJA JACK!</span>
+            </button>
+        </div>
+
+        <!-- Main Slot Machine Matrix (5 Reels x 3 Rows) -->
+        <main class="slot-frame p-3 sm:p-5 rounded-3xl relative">
+            <!-- Payline Canvas Overlay -->
+            <canvas id="payline-canvas"></canvas>
+
+            <!-- Free Spins Banner Overlay -->
+            <div id="freespin-banner" class="hidden absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-gradient-to-r from-pink-600 to-purple-600 text-white px-4 py-1 rounded-full border border-pink-300 shadow-xl text-xs font-bold animate-pulse">
+                FREE SPINS: <span id="freespin-count">0</span> TERBAKI
+            </div>
+
+            <!-- 5 Reels -->
+            <div class="grid grid-cols-5 gap-1.5 sm:gap-3 h-[270px] sm:h-[330px]">
+                <div class="reel-column" id="reel-0"><div class="reel-strip" id="strip-0"></div></div>
+                <div class="reel-column" id="reel-1"><div class="reel-strip" id="strip-1"></div></div>
+                <div class="reel-column" id="reel-2"><div class="reel-strip" id="strip-2"></div></div>
+                <div class="reel-column" id="reel-3"><div class="reel-strip" id="strip-3"></div></div>
+                <div class="reel-column" id="reel-4"><div class="reel-strip" id="strip-4"></div></div>
+            </div>
+        </main>
+
+        <!-- Machine Control Panel -->
+        <section class="bg-purple-950/70 backdrop-blur-md p-3 sm:p-4 rounded-3xl border border-purple-800/40 shadow-2xl flex flex-col gap-3">
+            
+            <!-- Quick Bet Tools & Info Modals -->
+            <div class="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
+                <!-- Bet Modifiers -->
+                <div class="flex items-center gap-1.5">
+                    <button onclick="adjustBet(-10)" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-900/80 hover:bg-purple-800 active:scale-95 border border-purple-700 text-amber-300 font-black text-base flex items-center justify-center transition" aria-label="Kurang Bet">
+                        <i class="fa-solid fa-minus"></i>
+                    </button>
+                    <button onclick="adjustBet(10)" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-900/80 hover:bg-purple-800 active:scale-95 border border-purple-700 text-amber-300 font-black text-base flex items-center justify-center transition" aria-label="Tambah Bet">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                    <button onclick="setBetMax()" class="px-3 py-2 rounded-xl bg-purple-900/80 hover:bg-purple-800 active:scale-95 border border-purple-700 text-amber-400 font-bold text-xs uppercase transition">
+                        MAX BET
+                    </button>
+                </div>
+
+                <!-- Game Tools -->
+                <div class="flex items-center gap-1.5 sm:gap-2">
+                    <button onclick="openModal('paytable-modal')" class="px-2.5 sm:px-3 py-2 rounded-xl bg-purple-900/60 hover:bg-purple-800 border border-purple-700/50 text-purple-200 text-xs font-semibold flex items-center gap-1 transition">
+                        <i class="fa-solid fa-table-cells text-amber-400"></i>
+                        <span class="hidden sm:inline">Paytable</span>
+                    </button>
+                    <button onclick="openModal('stats-modal')" class="px-2.5 sm:px-3 py-2 rounded-xl bg-purple-900/60 hover:bg-purple-800 border border-purple-700/50 text-purple-200 text-xs font-semibold flex items-center gap-1 transition">
+                        <i class="fa-solid fa-chart-pie text-cyan-400"></i>
+                        <span class="hidden sm:inline">Statistik</span>
+                    </button>
+                    <button onclick="openModal('history-modal')" class="px-2.5 sm:px-3 py-2 rounded-xl bg-purple-900/60 hover:bg-purple-800 border border-purple-700/50 text-purple-200 text-xs font-semibold flex items-center gap-1 transition">
+                        <i class="fa-solid fa-clock-rotate-left text-emerald-400"></i>
+                        <span class="hidden sm:inline">Sejarah</span>
+                    </button>
+                    <button onclick="claimFreeCredits()" class="px-2.5 sm:px-3 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold transition shadow-md flex items-center gap-1">
+                        <i class="fa-solid fa-coins"></i>
+                        <span>+1,000</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Primary Action Buttons Row -->
+            <div class="grid grid-cols-3 gap-2 sm:gap-3 items-center">
+                <!-- Auto Spin Button -->
+                <button id="btn-autospin" onclick="toggleAutoSpinModal()" class="py-3 sm:py-4 rounded-2xl bg-gradient-to-b from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 active:scale-95 border border-blue-400/50 text-white font-bold text-xs sm:text-base shadow-lg transition uppercase">
+                    AUTO SPIN
+                </button>
+
+                <!-- Big Main Spin Button -->
+                <button id="btn-spin" onclick="handleSpinClick()" class="py-3 sm:py-4 rounded-2xl bg-gradient-to-b from-red-500 via-amber-500 to-yellow-500 hover:from-red-400 hover:to-yellow-400 active:scale-95 border-2 border-amber-200 text-black font-black text-lg sm:text-2xl shadow-xl shadow-amber-500/30 transition uppercase tracking-widest flex items-center justify-center gap-2">
+                    <span>SPIN</span>
+                </button>
+
+                <!-- Immediate Stop Button -->
+                <button id="btn-stop" onclick="stopSpinImmediate()" disabled class="py-3 sm:py-4 rounded-2xl bg-gradient-to-b from-slate-700 to-slate-900 text-slate-500 font-bold text-xs sm:text-base border border-slate-700 cursor-not-allowed transition uppercase">
+                    STOP
+                </button>
+            </div>
+        </section>
+
+        <!-- Footer Disclaimer -->
+        <footer class="text-center py-2 px-4 text-[10px] sm:text-xs text-purple-400/80 border-t border-purple-950/60">
+            Simulation Game • Virtual Credits Only • No Real Money • No Cash Value
+        </footer>
+    </div>
+
+    <!-- MODAL: Mock Withdrawal / Cuci Maya Simulator -->
+    <div id="withdraw-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5">
+        <div class="bg-purple-950 border border-emerald-500/60 rounded-3xl w-full max-w-md flex flex-col overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-purple-800 flex justify-between items-center bg-gradient-to-r from-emerald-900/60 to-purple-900/40">
+                <h2 class="text-lg font-bold text-emerald-400 flex items-center gap-2">
+                    <i class="fa-solid fa-money-bill-wave"></i> Pengeluaran Kredit Maya (Cuci)
+                </h2>
+                <button onclick="closeModal('withdraw-modal')" class="w-8 h-8 rounded-full bg-purple-800/60 text-purple-200 hover:bg-purple-700 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-4 text-xs">
+                <div class="bg-emerald-950/40 border border-emerald-800 p-3 rounded-xl text-emerald-200 text-[11px] leading-relaxed">
+                    ℹ️ <strong>SIMULASI FANTASI SAHAJA:</strong> Ciri ini adalah untuk tujuan keseronokan sahaja. Kredit yang ditarik balik akan dipindahkan ke "Akaun Bank Fantasi Abang Jack" dan tidak mempunyai nilai tunai sebenar.
+                </div>
+
+                <div>
+                    <label class="block text-purple-300 font-semibold mb-1">Pilih Bank / e-Wallet Fantasi:</label>
+                    <select id="withdraw-bank" class="w-full bg-black/60 border border-purple-700 rounded-xl p-2.5 text-white font-bold text-xs focus:outline-none focus:border-emerald-400">
+                        <option value="Maybank Maya (Fantasi)">🏦 Maybank Maya (Fantasi)</option>
+                        <option value="Touch 'n Go eWallet Fantasi">📱 Touch 'n Go e-Wallet Fantasi</option>
+                        <option value="Bank Poket Abang Jack">💼 Bank Poket Abang Jack</option>
+                        <option value="Crypto Pisang Pay (BSC)">🍌 Crypto Pisang Pay</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-purple-300 font-semibold mb-1">Jumlah Pengeluaran (Baki Boleh Cuci: $<span id="withdraw-max-label">0</span>):</label>
+                    <input type="number" id="withdraw-amount" min="100" class="w-full bg-black/60 border border-purple-700 rounded-xl p-2.5 text-amber-300 font-bold text-sm focus:outline-none focus:border-emerald-400" placeholder="Masukkan jumlah kredit...">
+                </div>
+
+                <button onclick="processMockWithdrawal()" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black text-sm rounded-xl uppercase tracking-wider transition shadow-lg">
+                    PROSES PENGELUARAN MAYA
+                </button>
+
+                <!-- Fake Receipt Display Area -->
+                <div id="withdraw-receipt" class="hidden bg-white text-gray-900 p-4 rounded-xl font-mono text-left space-y-1 shadow-inner border border-gray-300 text-[11px]">
+                    <div class="text-center font-bold text-sm text-purple-900">=== RESIT PENGELUARAN MAYA ===</div>
+                    <div class="text-[10px] text-gray-500 text-center">Status: LULUS 100% FANTASI 🤑</div>
+                    <hr class="my-1 border-gray-300">
+                    <div>Masa: <span id="rec-time"></span></div>
+                    <div>Bank: <span id="rec-bank"></span></div>
+                    <div>Jumlah: <span id="rec-amount" class="font-bold text-emerald-700"></span> Credits</div>
+                    <div class="text-[10px] text-gray-600 italic mt-2 text-center">"Kredit maya telah berjaya dihantar ke alam fantasi anda. Selamat mencuba lagi!"</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Paytable & Game Info -->
+    <div id="paytable-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+        <div class="bg-purple-950 border border-purple-700 rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-purple-800 flex justify-between items-center bg-purple-900/40">
+                <h2 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+                    <i class="fa-solid fa-book-open"></i> Paytable & Rules
+                </h2>
+                <button onclick="closeModal('paytable-modal')" class="w-8 h-8 rounded-full bg-purple-800/60 text-purple-200 hover:bg-purple-700 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-4 sm:p-6 overflow-y-auto space-y-6 text-sm text-purple-200">
+                <!-- Special Symbols -->
+                <div>
+                    <h3 class="font-bold text-amber-300 text-xs uppercase tracking-wider mb-3">Simbol Khas</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-purple-900/40 p-3 rounded-xl border border-purple-800 flex items-center gap-3">
+                            <span class="text-3xl">🃏</span>
+                            <div>
+                                <h4 class="font-bold text-white">WILD</h4>
+                                <p class="text-xs text-purple-300">Menggantikan semua simbol biasa (kecuali Scatter) untuk membentuk payline menang.</p>
+                            </div>
+                        </div>
+                        <div class="bg-purple-900/40 p-3 rounded-xl border border-purple-800 flex items-center gap-3">
+                            <span class="text-3xl">🌟</span>
+                            <div>
+                                <h4 class="font-bold text-white">SCATTER</h4>
+                                <p class="text-xs text-purple-300">3+ Scatter mengaktifkan Free Spins (3=10FS, 4=15FS, 5=25FS).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Symbol Multipliers -->
+                <div>
+                    <h3 class="font-bold text-amber-300 text-xs uppercase tracking-wider mb-3">Multiplier Simbol (5-Simbol)</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center" id="paytable-multipliers"></div>
+                </div>
+
+                <!-- 10 Paylines Diagram -->
+                <div>
+                    <h3 class="font-bold text-amber-300 text-xs uppercase tracking-wider mb-3">10 Corak Paylines</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2" id="paytable-lines"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Player Statistics -->
+    <div id="stats-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+        <div class="bg-purple-950 border border-purple-700 rounded-3xl w-full max-w-md flex flex-col overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-purple-800 flex justify-between items-center bg-purple-900/40">
+                <h2 class="text-lg font-bold text-cyan-400 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie"></i> Statistik Pemain
+                </h2>
+                <button onclick="closeModal('stats-modal')" class="w-8 h-8 rounded-full bg-purple-800/60 text-purple-200 hover:bg-purple-700 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-5 grid grid-cols-2 gap-3 text-center text-xs">
+                <div class="bg-purple-900/40 p-3 rounded-xl border border-purple-800">
+                    <span class="text-purple-300 block mb-1">Jumlah Spin</span>
+                    <span id="stat-spins" class="digital-font text-lg font-bold text-white">0</span>
+                </div>
+                <div class="bg-purple-900/40 p-3 rounded-xl border border-purple-800">
+                    <span class="text-purple-300 block mb-1">Win Rate</span>
+                    <span id="stat-winrate" class="digital-font text-lg font-bold text-emerald-400">0%</span>
+                </div>
+                <div class="bg-purple-900/40 p-3 rounded-xl border border-purple-800">
+                    <span class="text-purple-300 block mb-1">Jumlah Win</span>
+                    <span id="stat-wins" class="digital-font text-lg font-bold text-emerald-400">0</span>
+                </div>
+                <div class="bg-purple-900/40 p-3 rounded-xl border border-purple-800">
+                    <span class="text-purple-300 block mb-1">Jumlah Loss</span>
+                    <span id="stat-losses" class="digital-font text-lg font-bold text-red-400">0</span>
+                </div>
+                <div class="bg-purple-900/40 p-3 rounded-xl border border-purple-800">
+                    <span class="text-purple-300 block mb-1">Kemenangan Terbesar</span>
+                    <span id="stat-maxwin" class="digital-font text-lg font-bold text-amber-400">0</span>
+                </div>
+                <div class="bg-purple-900/40 p-3 rounded-xl border border-purple-800">
+                    <span class="text-purple-300 block mb-1">Total Free Spins</span>
+                    <span id="stat-freespins" class="digital-font text-lg font-bold text-pink-400">0</span>
+                </div>
+            </div>
+            <div class="p-4 border-t border-purple-800 flex justify-end">
+                <button onclick="resetStats()" class="px-3 py-1.5 bg-red-900/60 hover:bg-red-800 border border-red-700 text-red-200 text-xs rounded-xl font-semibold transition">
+                    Reset Statistik
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Spin History -->
+    <div id="history-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+        <div class="bg-purple-950 border border-purple-700 rounded-3xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-purple-800 flex justify-between items-center bg-purple-900/40">
+                <h2 class="text-lg font-bold text-emerald-400 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Sejarah Permainan
+                </h2>
+                <button onclick="closeModal('history-modal')" class="w-8 h-8 rounded-full bg-purple-800/60 text-purple-200 hover:bg-purple-700 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1">
+                <table class="w-full text-xs text-left text-purple-200">
+                    <thead class="text-[10px] text-purple-400 uppercase bg-purple-900/60 sticky top-0">
+                        <tr>
+                            <th class="p-2">Masa</th>
+                            <th class="p-2">Bet</th>
+                            <th class="p-2">Hasil</th>
+                            <th class="p-2 text-right">Win</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table-body" class="divide-y divide-purple-900/50"></tbody>
+                </table>
+            </div>
+            <div class="p-3 border-t border-purple-800 flex justify-end">
+                <button onclick="clearHistory()" class="px-3 py-1.5 bg-red-900/60 hover:bg-red-800 border border-red-700 text-red-200 text-xs rounded-xl font-semibold transition">
+                    Padam Sejarah
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Daily Bonus -->
+    <div id="daily-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+        <div class="bg-purple-950 border border-purple-700 rounded-3xl w-full max-w-md flex flex-col overflow-hidden shadow-2xl text-center">
+            <div class="p-4 border-b border-purple-800 bg-purple-900/40">
+                <h2 class="text-xl font-black text-amber-400 uppercase">🎁 Daily Bonus Reward</h2>
+                <p class="text-xs text-purple-300">Tuntut kredit percuma anda setiap hari!</p>
+            </div>
+            <div class="p-5 space-y-4">
+                <div class="grid grid-cols-4 sm:grid-cols-7 gap-2" id="daily-streak-grid"></div>
+                <div id="daily-status-msg" class="text-xs text-purple-300"></div>
+                <button id="btn-claim-daily" onclick="claimDailyBonus()" class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-black text-sm rounded-xl uppercase tracking-wider transition shadow-lg">
+                    TUNTUT SEKARANG
+                </button>
+            </div>
+            <div class="p-3 bg-purple-900/20 border-t border-purple-900 flex justify-center">
+                <button onclick="closeModal('daily-modal')" class="text-xs text-purple-400 hover:text-white">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Settings -->
+    <div id="settings-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+        <div class="bg-purple-950 border border-purple-700 rounded-3xl w-full max-w-sm flex flex-col overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-purple-800 flex justify-between items-center bg-purple-900/40">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-gear"></i> Tetapan
+                </h2>
+                <button onclick="closeModal('settings-modal')" class="w-8 h-8 rounded-full bg-purple-800/60 text-purple-200 hover:bg-purple-700 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-4 text-xs">
+                <div class="flex items-center justify-between">
+                    <span class="text-purple-200">Kesan Audio (SFX)</span>
+                    <input type="checkbox" id="setting-sound" onchange="updateSettings()" class="w-4 h-4 accent-amber-500 cursor-pointer">
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-purple-200">Muzik Latar (Brother Louie)</span>
+                    <input type="checkbox" id="setting-music" onchange="updateSettings()" class="w-4 h-4 accent-amber-500 cursor-pointer">
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-purple-200">Kurangkan Pergerakan (Reduce Motion)</span>
+                    <input type="checkbox" id="setting-reduce-motion" onchange="updateSettings()" class="w-4 h-4 accent-amber-500 cursor-pointer">
+                </div>
+                <hr class="border-purple-800">
+                <div class="space-y-2">
+                    <button onclick="confirmResetGame()" class="w-full py-2 bg-red-900/60 hover:bg-red-800 border border-red-700 text-red-200 rounded-xl font-bold transition">
+                        Reset Keseluruhan Permainan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tiktok-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5">
+        <div class="bg-purple-950 border border-pink-500/60 rounded-3xl w-full max-w-md flex flex-col overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-purple-800 flex justify-between items-center bg-gradient-to-r from-pink-900/60 to-purple-900/40">
+                <h2 class="text-lg font-bold text-pink-400 flex items-center gap-2">
+                    <i class="fa-brands fa-tiktok"></i> TikTok LIVE Studio Sync
+                </h2>
+                <button onclick="closeModal('tiktok-modal')" class="w-8 h-8 rounded-full bg-purple-800/60 text-purple-200 hover:bg-purple-700 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-4 text-xs">
+                <div class="bg-purple-900/40 border border-pink-500/30 p-3 rounded-xl space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-purple-200 font-semibold">Status Sambungan:</span>
+                        <span id="tiktok-ws-status" class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-900 text-red-300">Terputus (Offline)</span>
+                    </div>
+                    <p class="text-[11px] text-purple-300 leading-relaxed">
+                        Sambungkan permainan dengan <strong>TikTok Live Connector Server</strong> di PC tempatan anda.
+                    </p>
+                </div>
+
+                <!-- Smartphone Guidance Box -->
+                <div class="bg-pink-950/40 border border-pink-500/40 p-3 rounded-xl text-[11px] text-pink-200 space-y-1">
+                    <div class="font-bold flex items-center gap-1.5 text-pink-300">
+                        <i class="fa-solid fa-mobile-screen-button"></i> Sambung Guna Smartphone / Wi-Fi:
+                    </div>
+                    <ol class="list-decimal list-inside space-y-0.5 text-purple-300 text-[10px]">
+                        <li>Pastikan PC & Smartphone pada Wi-Fi yang sama.</li>
+                        <li>Di PC, buka <code class="bg-black/60 px-1 py-0.5 rounded text-pink-400 font-mono">cmd</code> & taip <code class="bg-black/60 px-1 py-0.5 rounded text-pink-400 font-mono">ipconfig</code> untuk cari IP PC.</li>
+                        <li>Gantikan <code class="text-amber-300">localhost</code> dengan IP PC (cth: <code class="text-amber-300">ws://192.168.1.15:8080</code>).</li>
+                    </ol>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-purple-300 font-semibold">URL WebSocket Server:</label>
+                        <button onclick="fillLocalIPSample()" class="text-[10px] text-pink-400 hover:text-pink-300 underline font-semibold">
+                            Contoh IP Wi-Fi
+                        </button>
+                    </div>
+                    <input type="text" id="tiktok-ws-url" value="ws://localhost:8080" class="w-full bg-black/60 border border-purple-700 rounded-xl p-2.5 text-pink-300 font-mono text-xs focus:outline-none focus:border-pink-400">
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-purple-300 font-semibold">Tetapan Tindakan Gift:</label>
+                    <div class="flex items-center justify-between bg-purple-900/30 p-2 rounded-xl">
+                        <span class="text-purple-200">Automatik Spin apabila terima Gift</span>
+                        <input type="checkbox" id="setting-gift-spin" checked class="w-4 h-4 accent-pink-500 cursor-pointer">
+                    </div>
+                    <div class="flex items-center justify-between bg-purple-900/30 p-2 rounded-xl">
+                        <span class="text-purple-200">Gift Besar (>100 Coins) = Belanja Jack!</span>
+                        <input type="checkbox" id="setting-gift-jack" checked class="w-4 h-4 accent-pink-500 cursor-pointer">
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="connectTikTokWS()" class="flex-1 py-3 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-black text-xs rounded-xl uppercase tracking-wider transition shadow-lg">
+                        SAMBUNG WEBSOCKET
+                    </button>
+                    <button onclick="testTikTokGiftEvent()" class="px-3 py-3 bg-purple-800 hover:bg-purple-700 text-pink-300 font-bold text-xs rounded-xl transition">
+                        UJI GIFT (TEST)
+                    </button>
+                </div>
+
+                <!-- Event Logs -->
+                <div>
+                    <label class="block text-purple-300 font-semibold mb-1">Log Gift TikTok Terakhir:</label>
+                    <div id="tiktok-log-box" class="bg-black/80 border border-purple-900 rounded-xl p-2.5 h-24 overflow-y-auto font-mono text-[10px] text-gray-300 space-y-1">
+                        <div class="text-gray-500 italic">Belum ada gift diterima...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Auto Spin Selector -->
+    <div id="autospin-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+        <div class="bg-purple-950 border border-purple-700 rounded-3xl w-full max-w-xs flex flex-col overflow-hidden shadow-2xl text-center">
+            <div class="p-4 border-b border-purple-800 bg-purple-900/40">
+                <h2 class="text-base font-bold text-blue-400">Pilih Bilangan Auto Spin</h2>
+            </div>
+            <div class="p-4 grid grid-cols-2 gap-3">
+                <button onclick="startAutoSpin(10)" class="py-3 bg-purple-900/80 hover:bg-purple-800 border border-purple-700 text-white font-bold rounded-xl">10 Spins</button>
+                <button onclick="startAutoSpin(25)" class="py-3 bg-purple-900/80 hover:bg-purple-800 border border-purple-700 text-white font-bold rounded-xl">25 Spins</button>
+                <button onclick="startAutoSpin(50)" class="py-3 bg-purple-900/80 hover:bg-purple-800 border border-purple-700 text-white font-bold rounded-xl">50 Spins</button>
+                <button onclick="startAutoSpin(100)" class="py-3 bg-purple-900/80 hover:bg-purple-800 border border-purple-700 text-white font-bold rounded-xl">100 Spins</button>
+            </div>
+            <div class="p-3 border-t border-purple-900">
+                <button onclick="closeModal('autospin-modal')" class="text-xs text-purple-400">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <script>
+        // Game Configurations & Symbols Setup
+        const GAME_CONFIG = {
+            storagePrefix: 'fruitSpin_v2_',
+            startingCredits: 10000,
+            minBet: 10,
+            maxBet: 10000,
+            reelCount: 5,
+            rowCount: 3,
+            symbols: [
+                { id: 'CHERRY', name: 'Cherry', icon: '🍒', multiplier: 5, weight: 25 },
+                { id: 'LEMON', name: 'Lemon', icon: '🍋', multiplier: 8, weight: 22 },
+                { id: 'ORANGE', name: 'Orange', icon: '🍊', multiplier: 10, weight: 20 },
+                { id: 'APPLE', name: 'Apple', icon: '🍎', multiplier: 15, weight: 18 },
+                { id: 'GRAPE', name: 'Grape', icon: '🍇', multiplier: 20, weight: 15 },
+                { id: 'STRAWBERRY', name: 'Strawberry', icon: '🍓', multiplier: 25, weight: 12 },
+                { id: 'WATERMELON', name: 'Watermelon', icon: '🍉', multiplier: 40, weight: 10 },
+                { id: 'BELL', name: 'Bell', icon: '🔔', multiplier: 60, weight: 8 },
+                { id: 'STAR', name: 'Star', icon: '⭐', multiplier: 100, weight: 5 },
+                { id: 'DIAMOND', name: 'Diamond', icon: '💎', multiplier: 250, weight: 3 },
+                { id: 'SEVEN', name: 'Lucky 7', icon: '7️⃣', multiplier: 500, weight: 2 },
+                { id: 'WILD', name: 'Wild Card', icon: '🃏', multiplier: 0, weight: 4 },
+                { id: 'SCATTER', name: 'Scatter Star', icon: '🌟', multiplier: 0, weight: 3 }
+            ],
+            paylines: [
+                [1, 1, 1, 1, 1], // Line 1: Mid
+                [0, 0, 0, 0, 0], // Line 2: Top
+                [2, 2, 2, 2, 2], // Line 3: Bot
+                [0, 1, 2, 1, 0], // Line 4: V
+                [2, 1, 0, 1, 2], // Line 5: Inverted V
+                [0, 0, 1, 2, 2], // Line 6: Diag Down
+                [2, 2, 1, 0, 0], // Line 7: Diag Up
+                [1, 0, 1, 2, 1], // Line 8: Zig Zag Top
+                [1, 2, 1, 0, 1], // Line 9: Zig Zag Bot
+                [0, 1, 0, 1, 0]  // Line 10: W Top
+            ],
+            dailyRewards: [500, 750, 1000, 1500, 2000, 3000, 5000]
+        };
+
+        // Main State Object
+        let gameState = {
+            credits: GAME_CONFIG.startingCredits,
+            bet: GAME_CONFIG.minBet,
+            lastWin: 0,
+            isSpinning: false,
+            autoSpinRemaining: 0,
+            freeSpinsRemaining: 0,
+            jackpots: { mini: 5840, major: 28950, mega: 124500 },
+            stats: { spins: 0, wins: 0, losses: 0, maxWin: 0, totalFreeSpins: 0 },
+            history: [],
+            settings: { sound: true, music: false, reduceMotion: false },
+            dailyStreak: 0,
+            lastDailyClaim: null
+        };
+
+        let tiktokSocket = null;
+        let isTikTokConnected = false;
+
+        let reelStrips = [];
+        let spinTimeouts = [];
+        let currentResultMatrix = [];
+        let audioCtx = null;
+        let brotherLouieInterval = null;
+        let brotherLouieStep = 0;
+
+        // Modern Talking - "Brother Louie" Iconic Chiptune Synth Sequencer Notes
+        // Notes mapped to frequencies (Hz)
+        const NOTE_FREQ = {
+            'A3': 220.00, 'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00,
+            'A4': 440.00, 'B4': 493.88, 'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46, 'G5': 783.99,
+            'REST': 0
+        };
+
+        // Brother Louie Synth Refrain Melody Track (16 Steps Loop)
+        const BROTHER_LOUIE_MELODY = [
+            'E4', 'E4', 'G4', 'E4', 'A4', 'A4', 'G4', 'F4',
+            'E4', 'D4', 'F4', 'E4', 'D4', 'C4', 'D4', 'E4'
+        ];
+
+        function loadSavedState() {
+            try {
+                const saved = localStorage.getItem(GAME_CONFIG.storagePrefix + 'state');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    gameState = { ...gameState, ...parsed };
+                }
+            } catch (e) {
+                console.warn('LocalStorage load error', e);
+            }
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(GAME_CONFIG.storagePrefix + 'state', JSON.stringify({
+                    credits: gameState.credits,
+                    stats: gameState.stats,
+                    history: gameState.history,
+                    settings: gameState.settings,
+                    dailyStreak: gameState.dailyStreak,
+                    lastDailyClaim: gameState.lastDailyClaim,
+                    jackpots: gameState.jackpots
+                }));
+            } catch (e) {
+                console.warn('LocalStorage save error', e);
+            }
+        }
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) audioCtx = new AudioContextClass();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Play SFX using Web Audio API
+        function playSound(type) {
+            if (!gameState.settings.sound) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'click') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(450, now);
+                osc.frequency.exponentialRampToValueAtTime(120, now + 0.05);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + 0.05);
+            } else if (type === 'stop') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.exponentialRampToValueAtTime(50, now + 0.09);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.09);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + 0.09);
+            } else if (type === 'win') {
+                [330, 440, 554, 659].forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+                    gain.gain.setValueAtTime(0.25, now + idx * 0.07);
+                    gain.gain.linearRampToValueAtTime(0.01, now + idx * 0.07 + 0.2);
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.start(now + idx * 0.07); osc.stop(now + idx * 0.07 + 0.2);
+                });
+            } else if (type === 'jack') {
+                [261, 329, 392, 523, 659, 783].forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+                    gain.gain.linearRampToValueAtTime(0.01, now + idx * 0.08 + 0.25);
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.start(now + idx * 0.08); osc.stop(now + idx * 0.08 + 0.25);
+                });
+            }
+        }
+
+        // Modern Talking - Brother Louie Web Audio Synth Loop
+        function toggleBrotherLouieMusic() {
+            gameState.settings.music = !gameState.settings.music;
+            document.getElementById('setting-music').checked = gameState.settings.music;
+            updateMusicButton();
+
+            if (gameState.settings.music) {
+                startBrotherLouieMusic();
+                showToast('🎵 Muzik: Brother Louie (Modern Talking) Aktif!');
+            } else {
+                stopBrotherLouieMusic();
+                showToast('🎵 Muzik Diberhentikan');
+            }
+            saveState();
+        }
+
+        function updateMusicButton() {
+            const btn = document.getElementById('btn-music');
+            const icon = document.getElementById('music-icon');
+            if (gameState.settings.music) {
+                btn.className = 'px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 border border-yellow-300 text-black font-black text-xs flex items-center gap-1.5 shadow-lg animate-pulse';
+                icon.className = 'fa-solid fa-compact-disc fa-spin text-black';
+            } else {
+                btn.className = 'px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-700 to-purple-800 hover:from-indigo-600 hover:to-purple-700 border border-indigo-400/40 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-md';
+                icon.className = 'fa-solid fa-music text-amber-300';
+            }
+        }
+
+        function startBrotherLouieMusic() {
+            initAudio();
+            if (!audioCtx) return;
+            if (brotherLouieInterval) clearInterval(brotherLouieInterval);
+
+            brotherLouieStep = 0;
+            const stepDuration = 200; // Tempo
+
+            brotherLouieInterval = setInterval(() => {
+                if (!gameState.settings.music || !audioCtx) return;
+                const noteName = BROTHER_LOUIE_MELODY[brotherLouieStep % BROTHER_LOUIE_MELODY.length];
+                const freq = NOTE_FREQ[noteName];
+
+                if (freq > 0) {
+                    const now = audioCtx.currentTime;
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(freq, now);
+
+                    // Smooth envelope
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + 0.18);
+                }
+
+                brotherLouieStep++;
+            }, stepDuration);
+        }
+
+        function stopBrotherLouieMusic() {
+            if (brotherLouieInterval) {
+                clearInterval(brotherLouieInterval);
+                brotherLouieInterval = null;
+            }
+        }
+
+        function getRandomSymbol() {
+            const totalWeight = GAME_CONFIG.symbols.reduce((acc, s) => acc + s.weight, 0);
+            const array = new Uint32Array(1);
+            window.crypto.getRandomValues(array);
+            let random = (array[0] % totalWeight);
+
+            for (const sym of GAME_CONFIG.symbols) {
+                if (random < sym.weight) return sym;
+                random -= sym.weight;
+            }
+            return GAME_CONFIG.symbols[0];
+        }
+
+        function initReels() {
+            reelStrips = [];
+            for (let r = 0; r < GAME_CONFIG.reelCount; r++) {
+                const stripEl = document.getElementById(`strip-${r}`);
+                stripEl.innerHTML = '';
+                
+                const stripSymbols = [];
+                for (let i = 0; i < 22; i++) {
+                    const sym = getRandomSymbol();
+                    stripSymbols.push(sym);
+                    const symDiv = document.createElement('div');
+                    symDiv.className = 'symbol-card';
+                    symDiv.dataset.symbolId = sym.id;
+                    symDiv.innerHTML = `<span>${sym.icon}</span>`;
+                    stripEl.appendChild(symDiv);
+                }
+                reelStrips.push({ el: stripEl, symbols: stripSymbols });
+            }
+        }
+
+        // Bet Input Handler
+        function handleBetInputChange(val) {
+            let num = parseInt(val, 10);
+            if (isNaN(num) || num < GAME_CONFIG.minBet) num = GAME_CONFIG.minBet;
+            if (num > GAME_CONFIG.maxBet) num = GAME_CONFIG.maxBet;
+            gameState.bet = num;
+            document.getElementById('input-bet').value = num;
+            updateDisplays();
+        }
+
+        function adjustBet(delta) {
+            playSound('click');
+            let newBet = gameState.bet + delta;
+            handleBetInputChange(newBet);
+        }
+
+        function setBetMax() {
+            playSound('click');
+            handleBetInputChange(GAME_CONFIG.maxBet);
+        }
+
+        function handleSpinClick() {
+            initAudio();
+            playSound('click');
+            if (gameState.isSpinning) return;
+
+            if (gameState.credits < gameState.bet && gameState.freeSpinsRemaining === 0) {
+                showToast('Kredit tidak mencukupi!');
+                stopAutoSpin();
+                return;
+            }
+
+            executeSpin();
+        }
+
+        function executeSpin() {
+            gameState.isSpinning = true;
+            clearPaylineCanvas();
+            updateUIState();
+
+            if (gameState.freeSpinsRemaining > 0) {
+                gameState.freeSpinsRemaining--;
+                document.getElementById('freespin-count').innerText = gameState.freeSpinsRemaining;
+                if (gameState.freeSpinsRemaining === 0) {
+                    document.getElementById('freespin-banner').classList.add('hidden');
+                }
+            } else {
+                gameState.credits -= gameState.bet;
+            }
+            updateDisplays();
+
+            // Pre-calculate target results
+            currentResultMatrix = [];
+            for (let r = 0; r < GAME_CONFIG.reelCount; r++) {
+                const column = [];
+                for (let row = 0; row < GAME_CONFIG.rowCount; row++) {
+                    column.push(getRandomSymbol());
+                }
+                currentResultMatrix.push(column);
+            }
+
+            // Smooth Physics Reel Animation (RequestAnimationFrame + Cubic Bounce Ease)
+            const baseDuration = gameState.settings.reduceMotion ? 300 : 1000;
+            const stagger = gameState.settings.reduceMotion ? 80 : 200;
+
+            for (let r = 0; r < GAME_CONFIG.reelCount; r++) {
+                const strip = reelStrips[r];
+                const stripEl = strip.el;
+
+                // Load top symbols
+                for (let row = 0; row < GAME_CONFIG.rowCount; row++) {
+                    const sym = currentResultMatrix[r][row];
+                    stripEl.children[row].dataset.symbolId = sym.id;
+                    stripEl.children[row].innerHTML = `<span>${sym.icon}</span>`;
+                    stripEl.children[row].classList.remove('winning-symbol');
+                }
+
+                if (!gameState.settings.reduceMotion) {
+                    stripEl.classList.add('reel-blur');
+                    stripEl.style.transition = 'none';
+                    stripEl.style.transform = `translateY(-${16 * 90}px)`;
+                }
+
+                const stopDelay = baseDuration + (r * stagger);
+
+                const timeout = setTimeout(() => {
+                    if (!gameState.settings.reduceMotion) {
+                        // Elastic Overshoot / Spring Bounce Ease
+                        stripEl.style.transition = 'transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                        stripEl.style.transform = 'translateY(0px)';
+                        stripEl.classList.remove('reel-blur');
+                    }
+                    playSound('stop');
+
+                    if (r === GAME_CONFIG.reelCount - 1) {
+                        setTimeout(evaluateWin, 500);
+                    }
+                }, stopDelay);
+
+                spinTimeouts.push(timeout);
+            }
+        }
+
+        function stopSpinImmediate() {
+            if (!gameState.isSpinning) return;
+            spinTimeouts.forEach(t => clearTimeout(t));
+            spinTimeouts = [];
+
+            for (let r = 0; r < GAME_CONFIG.reelCount; r++) {
+                const stripEl = reelStrips[r].el;
+                stripEl.classList.remove('reel-blur');
+                stripEl.style.transition = 'none';
+                stripEl.style.transform = 'translateY(0px)';
+            }
+            playSound('stop');
+            evaluateWin();
+        }
+
+        function evaluateWin() {
+            gameState.isSpinning = false;
+            let totalWin = 0;
+            let winningLines = [];
+            let winningPositions = new Set();
+
+            // Evaluate 10 Paylines
+            GAME_CONFIG.paylines.forEach((linePattern, lineIdx) => {
+                let firstSymbol = null;
+                let matchCount = 0;
+                let positions = [];
+
+                for (let r = 0; r < GAME_CONFIG.reelCount; r++) {
+                    const rowIdx = linePattern[r];
+                    const symbol = currentResultMatrix[r][rowIdx];
+
+                    if (symbol.id === 'SCATTER') break;
+
+                    if (firstSymbol === null) {
+                        if (symbol.id !== 'WILD') firstSymbol = symbol;
+                        matchCount++;
+                        positions.push({ reel: r, row: rowIdx });
+                    } else if (symbol.id === firstSymbol.id || symbol.id === 'WILD') {
+                        matchCount++;
+                        positions.push({ reel: r, row: rowIdx });
+                    } else {
+                        break;
+                    }
+                }
+
+                if (matchCount >= 3 && firstSymbol !== null) {
+                    let multiplier = firstSymbol.multiplier;
+                    if (matchCount === 3) multiplier *= 0.2;
+                    if (matchCount === 4) multiplier *= 0.5;
+
+                    const lineWin = Math.floor(gameState.bet * multiplier);
+                    totalWin += lineWin;
+                    winningLines.push({ lineIdx, lineWin, positions });
+                    positions.forEach(p => winningPositions.add(`${p.reel}-${p.row}`));
+                }
+            });
+
+            // Evaluate Scatters
+            let scatterCount = 0;
+            let scatterPositions = [];
+            for (let r = 0; r < GAME_CONFIG.reelCount; r++) {
+                for (let row = 0; row < GAME_CONFIG.rowCount; row++) {
+                    if (currentResultMatrix[r][row].id === 'SCATTER') {
+                        scatterCount++;
+                        scatterPositions.push({ reel: r, row });
+                    }
+                }
+            }
+
+            if (scatterCount >= 3) {
+                let freeSpinsAwarded = scatterCount === 3 ? 10 : (scatterCount === 4 ? 15 : 25);
+                gameState.freeSpinsRemaining += freeSpinsAwarded;
+                gameState.stats.totalFreeSpins += freeSpinsAwarded;
+                document.getElementById('freespin-banner').classList.remove('hidden');
+                document.getElementById('freespin-count').innerText = gameState.freeSpinsRemaining;
+                showToast(`🎉 SCATTER! TERIMA ${freeSpinsAwarded} FREE SPINS!`);
+                scatterPositions.forEach(p => winningPositions.add(`${p.reel}-${p.row}`));
+            }
+
+            // Stats & Rewards
+            gameState.lastWin = totalWin;
+            gameState.credits += totalWin;
+            gameState.stats.spins++;
+
+            if (totalWin > 0) {
+                gameState.stats.wins++;
+                if (totalWin > gameState.stats.maxWin) gameState.stats.maxWin = totalWin;
+                highlightWinningSymbols(winningPositions);
+                drawPaylines(winningLines);
+                triggerWinEffects(totalWin);
+            } else {
+                gameState.stats.losses++;
+            }
+
+            recordHistory(totalWin);
+            updateDisplays();
+            saveState();
+            updateUIState();
+
+            // Auto Spin Sequence
+            if (gameState.autoSpinRemaining > 0) {
+                gameState.autoSpinRemaining--;
+                if (gameState.autoSpinRemaining === 0 || gameState.credits < gameState.bet) {
+                    stopAutoSpin();
+                } else {
+                    setTimeout(executeSpin, 800);
+                }
+            } else if (gameState.freeSpinsRemaining > 0 && totalWin === 0) {
+                setTimeout(executeSpin, 900);
+            }
+        }
+
+        // "Belanja Dekat Jack" Festive Hype Feature
+        function triggerJackBelanja() {
+            initAudio();
+            playSound('jack');
+            const bonusDrop = Math.floor(Math.random() * 800) + 500;
+            gameState.credits += bonusDrop;
+            updateDisplays();
+            saveState();
+
+            // Screen Shake VFX
+            const app = document.getElementById('main-app');
+            app.classList.add('shake-screen');
+            setTimeout(() => app.classList.remove('shake-screen'), 500);
+
+            launchConfetti();
+            showToast(`🤵 ABANG JACK BELANJA +${bonusDrop.toLocaleString()} KREDIT MAYA! 🎉`);
+        }
+
+        function highlightWinningSymbols(positionsSet) {
+            positionsSet.forEach(posKey => {
+                const [r, row] = posKey.split('-').map(Number);
+                const stripEl = reelStrips[r].el;
+                if (stripEl.children[row]) {
+                    stripEl.children[row].classList.add('winning-symbol');
+                }
+            });
+        }
+
+        function drawPaylines(winningLines) {
+            const canvas = document.getElementById('payline-canvas');
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const colWidth = canvas.width / 5;
+            const rowHeight = canvas.height / 3;
+
+            winningLines.forEach(w => {
+                ctx.beginPath();
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = '#f59e0b';
+                ctx.shadowColor = '#ef4444';
+                ctx.shadowBlur = 12;
+
+                w.positions.forEach((p, idx) => {
+                    const x = p.reel * colWidth + colWidth / 2;
+                    const y = p.row * rowHeight + rowHeight / 2;
+                    if (idx === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            });
+        }
+
+        function clearPaylineCanvas() {
+            const canvas = document.getElementById('payline-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function triggerWinEffects(amount) {
+            if (amount >= gameState.bet * 15) {
+                playSound('jack');
+                launchConfetti();
+                showToast(`🔥 MEGA WIN! +${amount.toLocaleString()} KREDIT!`);
+            } else {
+                playSound('win');
+                showToast(`WIN! +${amount.toLocaleString()} Kredit`);
+            }
+        }
+
+        function launchConfetti() {
+            if (gameState.settings.reduceMotion) return;
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            let particles = [];
+            const colors = ['#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6'];
+
+            for (let i = 0; i < 90; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 14,
+                    vy: (Math.random() - 0.7) * 16,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    life: 100
+                });
+            }
+
+            function animateConfetti() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach((p, index) => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.22;
+                    p.life -= 2;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    if (p.life <= 0) particles.splice(index, 1);
+                });
+
+                if (particles.length > 0) requestAnimationFrame(animateConfetti);
+            }
+            animateConfetti();
+        }
+
+        function processMockWithdrawal() {
+            const amountInput = document.getElementById('withdraw-amount');
+            const amt = parseInt(amountInput.value, 10);
+            const bankName = document.getElementById('withdraw-bank').value;
+
+            if (isNaN(amt) || amt < 100) {
+                showToast('Pengeluaran minimum 100 Kredit Maya!');
+                return;
+            }
+            if (amt > gameState.credits) {
+                showToast('Baki kredit tidak mencukupi untuk pengeluaran!');
+                return;
+            }
+
+            playSound('jack');
+            gameState.credits -= amt;
+            updateDisplays();
+            saveState();
+
+            // Populate Fake Receipt
+            document.getElementById('rec-time').innerText = new Date().toLocaleString();
+            document.getElementById('rec-bank').innerText = bankName;
+            document.getElementById('rec-amount').innerText = amt.toLocaleString();
+
+            const receipt = document.getElementById('withdraw-receipt');
+            receipt.classList.remove('hidden');
+
+            launchConfetti();
+            showToast(`💵 PENGELUARAN MAYA $${amt.toLocaleString()} LULUS!`);
+        }
+
+        function toggleAutoSpinModal() {
+            playSound('click');
+            if (gameState.autoSpinRemaining > 0) {
+                stopAutoSpin();
+            } else {
+                openModal('autospin-modal');
+            }
+        }
+
+        function startAutoSpin(count) {
+            closeModal('autospin-modal');
+            gameState.autoSpinRemaining = count;
+            updateUIState();
+            showToast(`Auto Spin Aktif: ${count} Spins`);
+            handleSpinClick();
+        }
+
+        function stopAutoSpin() {
+            gameState.autoSpinRemaining = 0;
+            updateUIState();
+            showToast('Auto Spin Dihentikan');
+        }
+
+        function claimFreeCredits() {
+            playSound('click');
+            gameState.credits += 1000;
+            updateDisplays();
+            saveState();
+            showToast('Kredit Percuma +1,000 Ditambah!');
+        }
+
+        function checkDailyBonusStatus() {
+            const today = new Date().toDateString();
+            const indicator = document.getElementById('daily-indicator');
+            if (gameState.lastDailyClaim !== today) {
+                indicator.classList.remove('hidden');
+            } else {
+                indicator.classList.add('hidden');
+            }
+        }
+
+        function renderDailyStreak() {
+            const container = document.getElementById('daily-streak-grid');
+            container.innerHTML = '';
+            const today = new Date().toDateString();
+            const canClaim = gameState.lastDailyClaim !== today;
+
+            GAME_CONFIG.dailyRewards.forEach((reward, idx) => {
+                const dayNum = idx + 1;
+                const isClaimed = idx < gameState.dailyStreak;
+                const isCurrent = idx === gameState.dailyStreak && canClaim;
+
+                const box = document.createElement('div');
+                box.className = `p-2 rounded-xl border text-center font-bold text-xs ${
+                    isClaimed ? 'bg-emerald-950/60 border-emerald-600 text-emerald-400' :
+                    isCurrent ? 'bg-amber-500 text-black border-amber-300 animate-bounce' :
+                    'bg-purple-900/40 border-purple-800 text-purple-400'
+                }`;
+                box.innerHTML = `<div>Hari ${dayNum}</div><div class="text-[10px]">+${reward}</div>`;
+                container.appendChild(box);
+            });
+
+            const btn = document.getElementById('btn-claim-daily');
+            const statusMsg = document.getElementById('daily-status-msg');
+
+            if (canClaim) {
+                btn.disabled = false;
+                btn.className = 'w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-black text-sm rounded-xl uppercase tracking-wider transition shadow-lg cursor-pointer';
+                statusMsg.innerText = 'Bonus sedia untuk dituntut!';
+            } else {
+                btn.disabled = true;
+                btn.className = 'w-full py-3 bg-gray-700 text-gray-400 font-bold text-sm rounded-xl uppercase tracking-wider cursor-not-allowed';
+                statusMsg.innerText = 'Sila kembali esok untuk bonus seterusnya.';
+            }
+        }
+
+        function claimDailyBonus() {
+            const today = new Date().toDateString();
+            if (gameState.lastDailyClaim === today) return;
+
+            const reward = GAME_CONFIG.dailyRewards[gameState.dailyStreak % GAME_CONFIG.dailyRewards.length];
+            gameState.credits += reward;
+            gameState.lastDailyClaim = today;
+            gameState.dailyStreak = (gameState.dailyStreak + 1) % 7;
+
+            updateDisplays();
+            saveState();
+            checkDailyBonusStatus();
+            renderDailyStreak();
+            playSound('win');
+            showToast(`Bonus Hari Dituntut: +${reward} Kredit!`);
+        }
+
+        function updateDisplays() {
+            document.getElementById('display-credits').innerText = gameState.credits.toLocaleString();
+            document.getElementById('display-win').innerText = gameState.lastWin.toLocaleString();
+            document.getElementById('input-bet').value = gameState.bet;
+            document.getElementById('withdraw-max-label').innerText = gameState.credits.toLocaleString();
+        }
+
+        function updateUIState() {
+            const btnSpin = document.getElementById('btn-spin');
+            const btnStop = document.getElementById('btn-stop');
+            const btnAuto = document.getElementById('btn-autospin');
+
+            if (gameState.isSpinning) {
+                btnSpin.disabled = true;
+                btnSpin.className = 'py-3 sm:py-4 rounded-2xl bg-gray-700 text-gray-500 font-black text-lg sm:text-2xl cursor-not-allowed uppercase';
+                btnStop.disabled = false;
+                btnStop.className = 'py-3 sm:py-4 rounded-2xl bg-gradient-to-b from-red-600 to-red-800 text-white font-bold text-xs sm:text-base border border-red-500 cursor-pointer shadow-lg uppercase';
+            } else {
+                btnSpin.disabled = false;
+                btnSpin.className = 'py-3 sm:py-4 rounded-2xl bg-gradient-to-b from-red-500 via-amber-500 to-yellow-500 hover:from-red-400 hover:to-yellow-400 active:scale-95 border-2 border-amber-200 text-black font-black text-lg sm:text-2xl shadow-xl shadow-amber-500/30 transition uppercase tracking-widest flex items-center justify-center gap-2';
+                btnStop.disabled = true;
+                btnStop.className = 'py-3 sm:py-4 rounded-2xl bg-gradient-to-b from-slate-700 to-slate-900 text-slate-500 font-bold text-xs sm:text-base border border-slate-700 cursor-not-allowed uppercase';
+            }
+
+            if (gameState.autoSpinRemaining > 0) {
+                btnAuto.innerText = `STOP (${gameState.autoSpinRemaining})`;
+                btnAuto.className = 'py-3 sm:py-4 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs sm:text-base border border-red-400 uppercase shadow-lg';
+            } else {
+                btnAuto.innerText = 'AUTO SPIN';
+                btnAuto.className = 'py-3 sm:py-4 rounded-2xl bg-gradient-to-b from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 active:scale-95 border border-blue-400/50 text-white font-bold text-xs sm:text-base shadow-lg transition uppercase';
+            }
+        }
+
+        function recordHistory(winAmount) {
+            const record = {
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                bet: gameState.bet,
+                win: winAmount,
+                result: winAmount > 0 ? 'WIN' : 'LOSS'
+            };
+            gameState.history.unshift(record);
+            if (gameState.history.length > 30) gameState.history.pop();
+        }
+
+        function renderHistoryTable() {
+            const tbody = document.getElementById('history-table-body');
+            tbody.innerHTML = '';
+            gameState.history.forEach(h => {
+                const tr = document.createElement('tr');
+                tr.className = h.win > 0 ? 'bg-emerald-950/20' : '';
+                tr.innerHTML = `
+                    <td class="p-2 text-purple-300">${h.time}</td>
+                    <td class="p-2">${h.bet}</td>
+                    <td class="p-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${h.win > 0 ? 'bg-emerald-900 text-emerald-300' : 'bg-gray-800 text-gray-400'}">${h.result}</span></td>
+                    <td class="p-2 text-right font-bold ${h.win > 0 ? 'text-amber-400' : 'text-purple-400'}">${h.win}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderStatsModal() {
+            document.getElementById('stat-spins').innerText = gameState.stats.spins;
+            document.getElementById('stat-wins').innerText = gameState.stats.wins;
+            document.getElementById('stat-losses').innerText = gameState.stats.losses;
+            document.getElementById('stat-maxwin').innerText = gameState.stats.maxWin;
+            document.getElementById('stat-freespins').innerText = gameState.stats.totalFreeSpins;
+
+            const winrate = gameState.stats.spins > 0 ? Math.round((gameState.stats.wins / gameState.stats.spins) * 100) : 0;
+            document.getElementById('stat-winrate').innerText = `${winrate}%`;
+        }
+
+        function renderPaytableModal() {
+            const container = document.getElementById('paytable-multipliers');
+            container.innerHTML = '';
+            GAME_CONFIG.symbols.filter(s => s.multiplier > 0).forEach(s => {
+                const card = document.createElement('div');
+                card.className = 'bg-purple-900/40 p-2 rounded-xl border border-purple-800';
+                card.innerHTML = `<span class="text-2xl">${s.icon}</span><div class="font-bold text-white text-xs">${s.name}</div><div class="text-amber-400 font-bold text-xs">x${s.multiplier}</div>`;
+                container.appendChild(card);
+            });
+
+            const linesContainer = document.getElementById('paytable-lines');
+            linesContainer.innerHTML = '';
+            GAME_CONFIG.paylines.forEach((line, idx) => {
+                const item = document.createElement('div');
+                item.className = 'bg-purple-900/40 p-1.5 rounded-lg border border-purple-800 text-center text-[10px]';
+                item.innerHTML = `<span class="text-purple-300 font-bold">Line ${idx + 1}</span><div class="text-gray-400">[ ${line.join(', ')} ]</div>`;
+                linesContainer.appendChild(item);
+            });
+        }
+
+        function openModal(id) {
+            playSound('click');
+            if (id === 'history-modal') renderHistoryTable();
+            if (id === 'stats-modal') renderStatsModal();
+            if (id === 'paytable-modal') renderPaytableModal();
+            if (id === 'daily-modal') renderDailyStreak();
+
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            playSound('click');
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function showToast(msg) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'bg-purple-900/90 border border-purple-500 text-white text-xs px-4 py-2 rounded-xl shadow-xl backdrop-blur-md transition transform translate-y-2 opacity-0';
+            toast.innerText = msg;
+            container.appendChild(toast);
+
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        function toggleSound() {
+            gameState.settings.sound = !gameState.settings.sound;
+            document.getElementById('setting-sound').checked = gameState.settings.sound;
+            updateSoundIcon();
+            saveState();
+        }
+
+        function updateSoundIcon() {
+            const icon = document.getElementById('sound-icon');
+            if (gameState.settings.sound) {
+                icon.className = 'fa-solid fa-volume-high text-sm';
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-sm text-red-400';
+            }
+        }
+
+        function updateSettings() {
+            gameState.settings.sound = document.getElementById('setting-sound').checked;
+            gameState.settings.music = document.getElementById('setting-music').checked;
+            gameState.settings.reduceMotion = document.getElementById('setting-reduce-motion').checked;
+
+            if (gameState.settings.music) startBrotherLouieMusic();
+            else stopBrotherLouieMusic();
+
+            if (gameState.settings.reduceMotion) document.body.classList.add('reduce-motion');
+            else document.body.classList.remove('reduce-motion');
+
+            updateSoundIcon();
+            updateMusicButton();
+            saveState();
+        }
+
+        function resetStats() {
+            gameState.stats = { spins: 0, wins: 0, losses: 0, maxWin: 0, totalFreeSpins: 0 };
+            renderStatsModal();
+            saveState();
+            showToast('Statistik telah direset');
+        }
+
+        function clearHistory() {
+            gameState.history = [];
+            renderHistoryTable();
+            saveState();
+            showToast('Sejarah permainan dipadam');
+        }
+
+        function confirmResetGame() {
+            if (window.confirm ? confirm('Adakah anda pasti untuk me-reset keseluruhan data permainan?') : true) {
+                localStorage.removeItem(GAME_CONFIG.storagePrefix + 'state');
+                location.reload();
+            }
+        }
+
+        function connectTikTokWS() {
+            const url = document.getElementById('tiktok-ws-url').value.trim();
+            const badgeText = document.getElementById('tiktok-badge-text');
+            const badge = document.getElementById('tiktok-status-badge');
+            const wsStatus = document.getElementById('tiktok-ws-status');
+
+            if (tiktokSocket) {
+                tiktokSocket.close();
+            }
+
+            try {
+                badgeText.innerText = 'TikTok: Connecting...';
+                tiktokSocket = new WebSocket(url);
+
+                tiktokSocket.onopen = function() {
+                    isTikTokConnected = true;
+                    badgeText.innerText = 'TikTok: LIVE Connected';
+                    badge.className = 'cursor-pointer px-2 py-0.5 bg-emerald-950 text-emerald-300 border border-emerald-500 rounded-full text-[10px] font-bold flex items-center gap-1 hover:bg-emerald-900 transition animate-pulse';
+                    wsStatus.innerText = 'Terhubung (Online)';
+                    wsStatus.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-900 text-emerald-300';
+                    showToast('✅ WebSocket TikTok LIVE Berjaya Disambungkan!');
+                    logTikTokMessage('System', 'Connected to local WebSocket server');
+                };
+
+                tiktokSocket.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleTikTokLiveEvent(data);
+                    } catch (e) {
+                        console.error('Invalid WS JSON:', e);
+                    }
+                };
+
+                tiktokSocket.onerror = function() {
+                    badgeText.innerText = 'TikTok: Error';
+                    badge.className = 'cursor-pointer px-2 py-0.5 bg-red-950 text-red-300 border border-red-600 rounded-full text-[10px] font-bold flex items-center gap-1';
+                    wsStatus.innerText = 'Ralat Sambungan';
+                    wsStatus.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-red-900 text-red-300';
+                };
+
+                tiktokSocket.onclose = function() {
+                    isTikTokConnected = false;
+                    badgeText.innerText = 'TikTok: Offline';
+                    badge.className = 'cursor-pointer px-2 py-0.5 bg-gray-800 text-gray-400 border border-gray-600 rounded-full text-[10px] font-bold flex items-center gap-1 hover:bg-gray-700 transition';
+                    wsStatus.innerText = 'Terputus (Offline)';
+                    wsStatus.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-red-900 text-red-300';
+                };
+            } catch (err) {
+                showToast('Gagal menyambung ke WebSocket URL!');
+            }
+        }
+
+        function handleTikTokLiveEvent(eventData) {
+            const autoSpinOnGift = document.getElementById('setting-gift-spin').checked;
+            const triggerJackOnBigGift = document.getElementById('setting-gift-jack').checked;
+
+            if (eventData.type === 'gift') {
+                const username = eventData.nickname || eventData.uniqueId || 'Viewer';
+                const giftName = eventData.giftName || 'Gift';
+                const diamondCount = (eventData.diamondCount || 1) * (eventData.repeatCount || 1);
+
+                logTikTokMessage(username, `Hantar ${giftName} x${eventData.repeatCount || 1} (${diamondCount} coins)`);
+                showToast(`🎁 ${username} hantar ${giftName}! Thank you! 🎉`);
+
+                // Add bonus virtual credits to game equal to gift diamonds * 100
+                const bonusCredits = Math.max(500, diamondCount * 100);
+                gameState.credits += bonusCredits;
+                updateDisplays();
+                saveState();
+
+                // Trigger "Belanja Jack" if gift is big (>100 coins)
+                if (triggerJackOnBigGift && diamondCount >= 100) {
+                    triggerJackBelanja();
+                } else if (autoSpinOnGift && !gameState.isSpinning) {
+                    // Auto Spin on gift receive
+                    executeSpin();
+                }
+            } else if (eventData.type === 'like') {
+                const username = eventData.nickname || 'Viewer';
+                logTikTokMessage(username, `Telah menekan Like!`);
+            }
+        }
+
+        function testTikTokGiftEvent() {
+            const mockNames = ['Aiman_Gaming', 'Siti_Chantik', 'Bossku_88', 'Abang_TikTok'];
+            const mockGifts = ['Rose', 'TikTok Logo', 'Dragon Fly', 'Universe'];
+            const randomUser = mockNames[Math.floor(Math.random() * mockNames.length)];
+            const randomGift = mockGifts[Math.floor(Math.random() * mockGifts.length)];
+
+            handleTikTokLiveEvent({
+                type: 'gift',
+                uniqueId: randomUser,
+                nickname: randomUser,
+                giftName: randomGift,
+                repeatCount: 1,
+                diamondCount: randomGift === 'Universe' ? 500 : 10
+            });
+        }
+
+        function logTikTokMessage(user, msg) {
+            const box = document.getElementById('tiktok-log-box');
+            const row = document.createElement('div');
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            row.innerHTML = `<span class="text-pink-400 font-bold">[${time}] ${user}:</span> <span class="text-gray-200">${msg}</span>`;
+            box.insertBefore(row, box.firstChild);
+        }
+
+        function fillLocalIPSample() {
+            const input = document.getElementById('tiktok-ws-url');
+            input.value = 'ws://192.168.1.100:8080';
+            showToast('💡 Tukar 192.168.1.100 kepada IP Wi-Fi PC anda!');
+        }
+
+        window.onload = function () {
+            loadSavedState();
+            initReels();
+            updateDisplays();
+            checkDailyBonusStatus();
+            updateSoundIcon();
+            updateMusicButton();
+
+            document.getElementById('setting-sound').checked = gameState.settings.sound;
+            document.getElementById('setting-music').checked = gameState.settings.music;
+            document.getElementById('setting-reduce-motion').checked = gameState.settings.reduceMotion;
+            if (gameState.settings.reduceMotion) document.body.classList.add('reduce-motion');
+
+            window.addEventListener('resize', clearPaylineCanvas);
+
+            // Auto-try connect local WebSocket server on load
+            setTimeout(connectTikTokWS, 1000);
+        };
+    </script>
+</body>
+</html>
